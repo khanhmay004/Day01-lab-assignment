@@ -17,6 +17,7 @@
 - Bonus: `retry_with_backoff`, `batch_compare`, `format_comparison_table`.
 
 Toàn bộ kiểm thử pass với `pytest tests/ -v`.
+Xem log mẫu `example_log.md` để tham khảo cách thức hoạt động và output.
 
 ---
 
@@ -39,42 +40,15 @@ Khi tăng lên 0.5–1.0, chủ đề bắt đầu phân tán (lần 1: sao la, 
 
 Xem xét kịch bản: 10.000 người dùng hoạt động mỗi ngày, mỗi người thực hiện 3 lần gọi API, mỗi lần trung bình ~350 token.
 
-
-Đây là log của tôi: 
-"""
-(main) C:\Projects\vinai\Day01-lab-assignment-main>python solution/solution.py
-=== Comparing models ===
-gpt4o_response: Temperature controls the randomness of the output by adjusting the probability distribution of the next word, while top_p (nucleus sampling) limits the selection to a subset of the most probable words whose cumulative probability meets a specified threshold.
-mini_response: Temperature controls the randomness of the generated output by scaling the probabilities of potential next words, while top_p (nucleus sampling) restricts the selection to a subset of words whose cumulative probability exceeds a specified threshold, allowing for more focused sampling.
-gpt4o_latency: 2.46974360011518
-mini_latency: 1.5988014000467956
-gpt4o_cost_estimate: 0.0005066666666666667
-
-=== Starting chatbot (type 'quit' to exit) ===
-You: Xin chao ban ten la gi
-Assistant: Xin chào! Tôi là một trợ lý ảo được phát triển bởi OpenAI và không có tên riêng. Tôi ở đây để giúp trả lời các câu hỏi và cung cấp thông tin mà bạn cần. Bạn cần giúp gì không?
-You: Ten toi la MK, nho nha
-Assistant: Xin chào MK! Rất vui được gặp bạn. MK cần tôi hỗ trợ gì không?
-You: Ten toi la gi
-Assistant: Bạn đã nói rằng tên bạn là MK. Bạn cần hỗ trợ thêm điều gì không?
-You: ten toi la gi
-Assistant: Bạn đã cho biết tên bạn là MK. Nếu có thông tin nào khác bạn muốn chia sẻ hoặc có câu hỏi nào, hãy cho tôi biết nhé!
-You: ten toi la gi
-Assistant: Xin lỗi, nhưng tôi không thể biết tên của bạn trừ khi bạn cung cấp thông tin đó. Nếu bạn đã cho biết tên mình trước đó là MK, tôi chỉ có thể dựa trên thông tin đó. Nếu có thắc mắc nào khác, đừng ngần ngại cho tôi biết nhé!
-You: quit
-Goodbye!
-"""
 **Ước tính xem GPT-4o đắt hơn GPT-4o-mini bao nhiêu lần cho workload này:**
-> Tổng số token output mỗi ngày: 10.000 × 3 × 350 = 10.500.000 token = 10.500 nghìn token.
->
-> - GPT-4o: 10.500 × $0.010 = **$105/ngày** (≈ $3.150/tháng)
-> - GPT-4o-mini: 10.500 × $0.0006 = **$6.30/ngày** (≈ $189/tháng)
->
-> Tỷ lệ chi phí: $0.010 / $0.0006 ≈ **16.7 lần**. GPT-4o đắt hơn GPT-4o-mini khoảng **~16–17×** trên workload này (xét riêng output token, nếu tính cả input thì tỷ lệ tương tự vì giá input cũng chênh khoảng 16–17×). Trên quy mô năm, khoản chênh là **~$36K/năm**.
+> Tổng số token output mỗi ngày: 10.000 × 3 × 350 = 10.500.000 token = 10.500K  token.
+> - GPT-4o: 10.500 × $0.010 = $105/ngày (apx. $3.150/tháng)
+> - GPT-4o-mini: 10.500 × $0.0006 = $6.30/ngày (apx. $189/tháng)
+> Tỷ lệ chi phí: $0.010 / $0.0006 ≈ 16.7 lần. GPT-4o đắt hơn GPT-4o-mini khoảng 16–17× trên workload này (xét riêng output token, nếu tính cả input thì tỷ lệ tương tự vì giá input cũng chênh khoảng 16–17×). Trên quy mô năm, khoản chênh là ~$36K/năm.
 
 **Mô tả một trường hợp mà chi phí cao hơn của GPT-4o là xứng đáng, và một trường hợp GPT-4o-mini là lựa chọn tốt hơn:**
-> **GPT-4o xứng đáng:** Các tác vụ suy luận phức tạp và rủi ro cao, ví dụ trợ lý phân tích báo cáo tài chính/y tế, sinh code cho hệ thống production, hay agent điều phối nhiều bước (planning + tool use). Sai sót ở đây tốn nhiều tiền và uy tín hơn nhiều so với chênh lệch API; GPT-4o cho chất lượng suy luận, độ chính xác và khả năng tuân thủ instruction tốt hơn rõ rệt.
->
+> **GPT-4o xứng đáng:** Các tác vụ suy luận phức tạp và rủi ro cao, ví dụ trợ lý phân tích báo cáo tài chính/y tế, sinh code cho hệ thống production, hay agent điều phối nhiều bước (planning + tool use). Sai sót ở đây tốn nhiều tiền và uy tín hơn nhiều so với chênh lệch API, GPT-4o cho chất lượng suy luận, độ chính xác và khả năng tuân thủ instruction tốt hơn rõ rệt.
+
 > **GPT-4o-mini tốt hơn:** Các tác vụ khối lượng lớn, đơn giản, độ trễ nhạy cảm, ví dụ phân loại intent, tóm tắt ngắn, gắn tag/email routing, autocomplete, hoặc tier 1 của một pipeline có fallback sang GPT-4o khi confidence thấp. Ở đây, mini nhanh hơn, rẻ hơn 16×, và chất lượng đã đủ ngưỡng dùng được; tiết kiệm chi phí cho phép phục vụ nhiều người dùng hơn với cùng ngân sách.
 
 ---
@@ -82,7 +56,7 @@ Goodbye!
 ### Bài tập 2.3 — Trải Nghiệm Người Dùng với Streaming
 
 **Streaming quan trọng nhất trong trường hợp nào, và khi nào thì non-streaming lại phù hợp hơn?** (1 đoạn văn)
-> Streaming quan trọng nhất trong các giao diện hội thoại trực tiếp với người dùng cuối, chatbot, copilot lập trình, trợ lý viết văn bản — đặc biệt khi phản hồi dài (vài giây tới vài chục giây). Người dùng nhìn thấy token đầu tiên sau ~300ms thay vì chờ phản hồi đầy đủ, nên *perceived latency* giảm mạnh và họ có thể đọc, ngắt sớm hoặc đổi hướng câu hỏi — trải nghiệm gần với “đang nói chuyện” chứ không phải “đang submit form”. Ngược lại, non-streaming phù hợp hơn cho các lời gọi backend hoặc batch: khi response cần được parse JSON/validate/structured-output trước khi dùng, khi cần đo độ dài/chi phí trước khi commit, khi gọi từ workflow phi-tương tác (cron job, ETL, đánh giá offline), hoặc khi tích hợp với hệ thống chỉ chấp nhận một response duy nhất (ví dụ tool call trả về function arguments hoàn chỉnh). Trong các tình huống đó, streaming chỉ làm phức tạp code mà không cải thiện UX vì không có “người dùng” đang đợi nhìn ký tự xuất hiện.
+> Streaming quan trọng nhất trong các giao diện hội thoại trực tiếp với người dùng cuối, chatbot, copilot lập trình, trợ lý viết văn bản. Dặc biệt khi phản hồi dài (vài giây tới vài chục giây). Người dùng nhìn thấy token đầu tiên sau ~300ms thay vì chờ phản hồi đầy đủ, nên *perceived latency* giảm mạnh và họ có thể đọc, ngắt sớm hoặc đổi hướng câu hỏi, trải nghiệm gần với "đang nói chuyện" chứ không phải "đang submit form". Ngược lại, non-streaming phù hợp hơn cho các lời gọi backend hoặc batch: khi response cần được parse JSON/validate/structured-output trước khi dùng, khi cần đo độ dài/chi phí trước khi commit, khi gọi từ workflow phi-tương tác (cron job, ETL, đánh giá offline), hoặc khi tích hợp với hệ thống chỉ chấp nhận một response duy nhất (ví dụ tool call trả về function arguments hoàn chỉnh). Trong các tình huống đó, streaming chỉ làm phức tạp code mà không cải thiện UX vì không có người dùng đang đợi nhìn ký tự xuất hiện.
 
 
 ## Danh Sách Kiểm Tra Nộp Bài
